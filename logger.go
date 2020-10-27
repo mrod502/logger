@@ -16,7 +16,7 @@ func init() {
 }
 
 //Log logs stuff
-func Log(in []string) {
+func Log(in ...string) {
 	msg := ""
 	for _, v := range in {
 		msg += v + " "
