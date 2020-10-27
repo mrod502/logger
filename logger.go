@@ -1,5 +1,8 @@
 package logger
 
+import (
+	"fmt"
+)
 var logChan chan string
 
 func init(){
