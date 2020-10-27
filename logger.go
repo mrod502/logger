@@ -3,22 +3,23 @@ package logger
 import (
 	"fmt"
 )
+
 var logChan chan string
 
-func init(){
-	logChan=make(chan string,128)
-	go func(){
-		for{
+func init() {
+	logChan = make(chan string, 128)
+	go func() {
+		for {
 			fmt.Println(<-logChan)
 		}
-	}
+	}()
 }
 
-
-func Log(in []string){
-	msg:=""
-	for _,v:=range in{
-		msg+=v+" "
+//Log logs stuff
+func Log(in []string) {
+	msg := ""
+	for _, v := range in {
+		msg += v + " "
 	}
-	logChan<-msg
+	logChan <- msg
 }
