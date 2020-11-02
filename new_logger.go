@@ -56,12 +56,6 @@ func init() {
 				warn(x.msg[0], msgInf)
 			case levelErr:
 				errorLog(x.msg[0], msgInf)
-			case levelShow:
-				show(x.msg[0], msgInf)
-			case levelVerb:
-				verbose(x.msg[0], msgInf)
-			case levelDebug:
-				debug(x.msg[0], msgInf)
 			case levelSend:
 				if len(x.msg) > 3 {
 					send(x.msg[0], x.msg[1], x.msg[2], x.msg[3:]...)
