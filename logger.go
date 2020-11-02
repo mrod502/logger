@@ -128,3 +128,11 @@ func send(prefix string, name string, key string, x ...string) {
 		name:     fmt.Sprintf("%-6s", key),
 	}).Info(logInfo)
 }
+
+// Line -- logs a line
+func line() {
+
+	log.WithFields(logrus.Fields{
+		"prefix": "---------",
+	}).Info(blankLine)
+}
