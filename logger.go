@@ -84,7 +84,7 @@ func warn(info string, x ...string) {
 		info = info[0:9]
 	}
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%9s", info),
+		"prefix": fmt.Sprintf("%25s", info),
 		//"Caller": caller,
 		//"Time": timeStamp,
 	}).Warn(suffix)
