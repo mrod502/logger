@@ -42,12 +42,12 @@ func init() {
 // LogLevel -- change LogLevel on-the-fly
 func LogLevel(lvl string) logrus.Level {
 	switch lvl {
-	case "info":
-		return logrus.InfoLevel
 	case "error":
 		return logrus.ErrorLevel
 	case "warn":
 		return logrus.WarnLevel
+	case "debug":
+		return logrus.DebugLevel
 	default:
 		return logrus.InfoLevel
 	}
@@ -102,6 +102,20 @@ func info(info string, x ...string) {
 	log.WithFields(logrus.Fields{
 		"prefix": fmt.Sprintf("%9s", info),
 	}).Info(suffix)
+}
+
+// Info -- log information
+func debug(info string, x ...string) {
+
+	suffix := strings.Join(x, " ")
+	suffix = fmt.Sprintf("%-55s", suffix) // replce with length at some point
+
+	if len(info) > 9 {
+		info = info[0:9]
+	}
+	log.WithFields(logrus.Fields{
+		"prefix": fmt.Sprintf("%9s", info),
+	}).Debug(suffix)
 }
 
 // Send -- Send a log to the "logger" system

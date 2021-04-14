@@ -2,6 +2,7 @@ package logger
 
 import (
 	"github.com/rs/zerolog"
+	"go.uber.org/atomic"
 )
 
 const (
@@ -22,6 +23,7 @@ var (
 	logChan                       chan logMessage
 	titleInf, titleWarn, titleErr string
 	msgInf                        string
+	DebugLogs                     *atomic.Bool
 )
 
 type logLevel byte
@@ -35,6 +37,7 @@ func init() {
 
 	zerolog.TimeFieldFormat = "01-02 15:04:05"
 	logChan = make(chan logMessage, 1024)
+	DebugLogs = atomic.NewBool(false)
 
 	//Info Messages
 	go func() {
@@ -56,6 +59,8 @@ func init() {
 				warn(x.msg[0], msgInf)
 			case levelErr:
 				errorLog(x.msg[0], msgInf)
+			case levelDebug:
+				debug(x.msg[0], msgInf)
 			case levelSend:
 				if len(x.msg) > 3 {
 					send(x.msg[0], x.msg[1], x.msg[2], x.msg[3:]...)
@@ -97,4 +102,11 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func Debug(x ...string) {
+	if !DebugLogs.Load() {
+		return
+	}
+	logChan <- logMessage{level: levelDebug, msg: x}
 }
