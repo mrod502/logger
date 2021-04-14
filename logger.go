@@ -16,6 +16,7 @@ var (
 	log = logrus.New()
 )
 
+//longest log
 const (
 	logLength = 52
 )
