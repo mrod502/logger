@@ -39,20 +39,6 @@ func init() {
 	log.SetOutput(os.Stdout)
 }
 
-// LogLevel -- change LogLevel on-the-fly
-func LogLevel(lvl string) logrus.Level {
-	switch lvl {
-	case "error":
-		return logrus.ErrorLevel
-	case "warn":
-		return logrus.WarnLevel
-	case "debug":
-		return logrus.DebugLevel
-	default:
-		return logrus.InfoLevel
-	}
-}
-
 // Error -- log an error
 func errorLog(info string, x ...string) {
 
