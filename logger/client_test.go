@@ -7,7 +7,7 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	rasPiIp := "http://192.168.1.133:1738"
+	rasPiIp := "192.168.1.133:1738"
 	c, err := NewClient(rasPiIp, "TESTCLIENT")
 
 	if err != nil {
