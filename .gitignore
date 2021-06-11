@@ -1,0 +1,6 @@
+*.arm
+*.lnx
+*.osx
+*.exe
+*.exe~
+*.log
