@@ -1,4 +1,4 @@
-package main
+package logger
 
 import (
 	"encoding/json"
@@ -12,20 +12,19 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mrod502/logger/logger"
 	"go.uber.org/atomic"
 )
 
-type log struct {
+type Log struct {
 	f   *os.File
 	c   chan []string
 	ctr *atomic.Uint32
 }
 
-func (l *log) run() {
+func (l *Log) run() {
 	for {
 		v := <-l.c
-		logger.Info(v...)
+		Info(v...)
 		s := time.Now().Format("2006-01-02 15:04:05.99") + " " + strings.Replace(strings.Join(v, " "), "\n", "\\n", -1) + "\n"
 
 		l.f.WriteString(s)
@@ -42,8 +41,8 @@ func init() {
 
 var notify chan []string
 
-func newLog(filePath string, c chan []string) (*log, error) {
-	l := new(log)
+func NewLog(filePath string, c chan []string) (*Log, error) {
+	l := new(Log)
 	f, err := openLogFile(filePath)
 	l.f = f
 	l.c = c
@@ -51,24 +50,17 @@ func newLog(filePath string, c chan []string) (*log, error) {
 	return l, err
 }
 
-func main() {
-	logger.Info("LOGGER", "Starting up")
-	if len(os.Args) < 3 {
-		logger.Error("LOG", "must supply file path and serve port")
-		time.Sleep(time.Millisecond * 100)
-		return
-	}
+func RunLogger(path, port string) {
+	Info("LOGGER", "Starting up")
 
-	var path string = os.Args[1]
-	var port string = os.Args[2]
 	router := mux.NewRouter()
 
-	router.HandleFunc(logger.EndpointLog, doLog)
+	router.HandleFunc(EndpointLog, doLog)
 
-	l, err := newLog(path, notify)
+	l, err := NewLog(path, notify)
 
 	if err != nil {
-		logger.Error("LOG", err.Error(), "exiting")
+		Error("LOG", err.Error(), "exiting")
 		return
 	}
 	defer l.f.Close()
@@ -84,14 +76,14 @@ func doLog(w http.ResponseWriter, r *http.Request) {
 	var inp []string
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		logger.Warn("READ", "unable to read body", err.Error())
+		Warn("READ", "unable to read body", err.Error())
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 	err = json.Unmarshal(b, &inp)
 
 	if err != nil {
-		logger.Warn("UNMARSHAL", "unable to unmarshal body", err.Error())
+		Warn("UNMARSHAL", "unable to unmarshal body", err.Error())
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
@@ -102,7 +94,7 @@ func doLog(w http.ResponseWriter, r *http.Request) {
 func openLogFile(path string) (f *os.File, err error) {
 	f, err = os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		logger.Debug("LOGFILE", "open", err.Error())
+		Debug("LOGFILE", "open", err.Error())
 	}
 	return
 }
@@ -111,6 +103,6 @@ func closeHandler() {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
-	logger.Info("LOGGER", "exiting")
+	Info("LOGGER", "exiting")
 	time.Sleep(time.Second / 2)
 }
