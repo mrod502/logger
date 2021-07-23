@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	prefixed "github.com/chappjc/logrus-prefix"
+	"go.uber.org/atomic"
 
 	"github.com/sirupsen/logrus"
 
@@ -38,6 +39,8 @@ func init() {
 	log.Level = logrus.DebugLevel
 
 	log.SetOutput(os.Stdout)
+	notify = make(chan []string, 2048)
+	logLocally = new(atomic.Bool)
 }
 
 // Error -- log an error
