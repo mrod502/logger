@@ -14,7 +14,7 @@ type Client struct {
 }
 
 func (c Client) logURI() string {
-	return c.addr + "/log"
+	return "http://" + c.addr + EndpointLog
 }
 
 const (
