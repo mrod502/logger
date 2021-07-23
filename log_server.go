@@ -37,6 +37,7 @@ func (l *Log) run() {
 }
 func init() {
 	notify = make(chan []string, 2048)
+	logLocally = new(atomic.Bool)
 }
 
 var notify chan []string

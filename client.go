@@ -6,6 +6,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"go.uber.org/atomic"
 )
 
 type Client struct {
@@ -20,6 +22,16 @@ func (c Client) logURI() string {
 const (
 	EndpointLog = "/log"
 )
+
+var logLocally *atomic.Bool
+
+func SetLogLocally(l bool) {
+	logLocally.Store(l)
+}
+
+func LogLocally() bool {
+	return logLocally.Load()
+}
 
 func NewClient(addr string, logPrefix string) (c *Client, err error) {
 	c = new(Client)
@@ -39,6 +51,10 @@ func NewClient(addr string, logPrefix string) (c *Client, err error) {
 
 func (c Client) WriteLog(inp ...string) (err error) {
 	_, err = http.DefaultClient.Post(c.logURI(), "text/json", stringSlice2Reader(inp))
+
+	if LogLocally() {
+		Info(inp...)
+	}
 
 	return err
 }

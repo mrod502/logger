@@ -20,10 +20,9 @@ const (
 )
 
 var (
-	logChan                       chan logMessage
-	titleInf, titleWarn, titleErr string
-	msgInf                        string
-	DebugLogs                     *atomic.Bool
+	logChan   chan logMessage
+	msgInf    string
+	DebugLogs *atomic.Bool
 )
 
 type logLevel byte
