@@ -27,7 +27,7 @@ func NewClient(addr string, logPrefix string) (c *Client, err error) {
 	c.pref = logPrefix
 	r := stringSlice2Reader([]string{c.pref, "client initialized"})
 
-	res, err := http.DefaultClient.Post("http://"+addr+EndpointLog, "text/json", r)
+	res, err := http.DefaultClient.Post("http://"+c.addr+EndpointLog, "text/json", r)
 	if err != nil {
 		return nil, errors.New("unable to connect to client: " + err.Error())
 	}
@@ -40,7 +40,7 @@ func NewClient(addr string, logPrefix string) (c *Client, err error) {
 func (c Client) WriteLog(inp ...string) (err error) {
 	_, err = http.DefaultClient.Post(c.logURI(), "text/json", stringSlice2Reader(inp))
 
-	return
+	return err
 }
 
 func stringSlice2Reader(v []string) io.Reader {
