@@ -39,7 +39,6 @@ func init() {
 	log.Level = logrus.DebugLevel
 
 	log.SetOutput(os.Stdout)
-	notify = make(chan []string, 2048)
 	logLocally = new(atomic.Bool)
 }
 

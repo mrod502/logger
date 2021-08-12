@@ -1,18 +1,21 @@
 package logger
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
+	gocache "github.com/mrod502/go-cache"
+	"github.com/vmihailenco/msgpack/v5"
 	"go.uber.org/atomic"
+	"gopkg.in/yaml.v3"
 )
 
 type Log struct {
@@ -36,55 +39,88 @@ func (l *Log) run() {
 	}
 }
 
-var notify chan []string
-
 func NewLog(filePath string, c chan []string) (*Log, error) {
 	l := new(Log)
 	f, err := openLogFile(filePath)
 	l.f = f
 	l.c = c
 	l.ctr = new(atomic.Uint32)
+
 	return l, err
 }
 
-func RunLogger(path, port string) {
+func (l *Log) Stop() {
+	l.f.Close()
+	l.f.Sync()
+}
+
+type LogServer struct {
+	logger  *Log
+	apiKeys *gocache.StringCache
+	notify  chan []string
+}
+
+func NewLogServer(cfg string) (*LogServer, error) {
+	home, _ := os.UserHomeDir()
+	b, err := ioutil.ReadFile(path.Join(home, cfg))
+
+	if err != nil {
+		return nil, err
+	}
+	var config ServerConfig
+
+	err = yaml.Unmarshal(b, &config)
+
+	c := make(chan []string, 1024)
+
+	l, err := NewLog("", c)
+	if err != nil {
+		return nil, err
+	}
+	ls := &LogServer{
+		logger: l,
+		notify: c,
+	}
+	return ls, nil
+}
+
+func (l *LogServer) Run(path, port string) {
 	Info("LOGGER", "Starting up")
 
 	router := mux.NewRouter()
 
-	router.HandleFunc(EndpointLog, doLog)
-
-	l, err := NewLog(path, notify)
+	router.HandleFunc(EndpointLog, l.doLog).Methods("POST")
+	var err error
+	l.logger, err = NewLog(path, l.notify)
 
 	if err != nil {
 		Error("LOG", err.Error(), "exiting")
 		return
 	}
-	defer l.f.Close()
-	defer l.f.Sync()
-	go l.run()
+	defer l.logger.Stop()
+	go l.logger.run()
 
 	go http.ListenAndServe(fmt.Sprintf(":%s", port), router)
 	closeHandler()
 
 }
 
-func doLog(w http.ResponseWriter, r *http.Request) {
-	var inp []string
+func (l *LogServer) doLog(w http.ResponseWriter, r *http.Request) {
+	var inp LogBody
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		Warn("READ", "unable to read body", err.Error())
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	err = json.Unmarshal(b, &inp)
+	err = msgpack.Unmarshal(b, &inp)
 
 	if err != nil {
 		Warn("UNMARSHAL", "unable to unmarshal body", err.Error())
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	notify <- inp
+	l.notify <- inp.Log
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -102,4 +138,9 @@ func closeHandler() {
 	<-c
 	Info("LOGGER", "exiting")
 	time.Sleep(time.Second / 2)
+}
+
+func (l *LogServer) validKey(key string) bool {
+
+	return l.apiKeys.Exists(key)
 }

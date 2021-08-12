@@ -2,11 +2,11 @@ package logger
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 
+	"github.com/vmihailenco/msgpack/v5"
 	"go.uber.org/atomic"
 )
 
@@ -37,7 +37,7 @@ func NewClient(addr string, logPrefix string) (c *Client, err error) {
 	c = new(Client)
 	c.addr = addr
 	c.pref = logPrefix
-	r := stringSlice2Reader([]string{c.pref, "client initialized"})
+	r := buildRequestBody([]string{c.pref, "client initialized"})
 
 	res, err := http.DefaultClient.Post("http://"+c.addr+EndpointLog, "text/json", r)
 	if err != nil {
@@ -50,7 +50,7 @@ func NewClient(addr string, logPrefix string) (c *Client, err error) {
 }
 
 func (c Client) WriteLog(inp ...string) (err error) {
-	_, err = http.DefaultClient.Post(c.logURI(), "text/json", stringSlice2Reader(inp))
+	_, err = http.DefaultClient.Post(c.logURI(), "application/octet-stream", buildRequestBody(inp))
 
 	if LogLocally() {
 		Info(inp...)
@@ -59,7 +59,17 @@ func (c Client) WriteLog(inp ...string) (err error) {
 	return err
 }
 
-func stringSlice2Reader(v []string) io.Reader {
-	b, _ := json.Marshal(v)
+type LogBody struct {
+	Key string   `msgpack:"k"`
+	Log []string `msgpack:"l"`
+}
+
+func buildRequestBody(v []string) io.Reader {
+
+	var body LogBody = LogBody{
+		Key: "",
+		Log: v,
+	}
+	b, _ := msgpack.Marshal(body)
 	return bytes.NewReader(b)
 }
