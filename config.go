@@ -6,4 +6,11 @@ type ServerConfig struct {
 }
 
 type ClientConfig struct {
+	EnableWebsocket bool
+	EnableTLS       bool
+	APIKey          string
+	Prefix          string
+	RemoteIP        string
+	LogLocally      bool
+	Port            uint16
 }

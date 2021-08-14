@@ -7,8 +7,8 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	rasPiIp := "192.168.1.133:1738"
-	c, err := NewClient(rasPiIp, "TESTCLIENT")
+
+	c, err := NewClient(ClientConfig{})
 
 	if err != nil {
 		t.Fatal(err)

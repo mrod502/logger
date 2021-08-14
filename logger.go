@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	prefixed "github.com/chappjc/logrus-prefix"
-	"go.uber.org/atomic"
 
 	"github.com/sirupsen/logrus"
 
@@ -39,7 +38,6 @@ func init() {
 	log.Level = logrus.DebugLevel
 
 	log.SetOutput(os.Stdout)
-	logLocally = new(atomic.Bool)
 }
 
 // Error -- log an error
@@ -54,9 +52,7 @@ func errorLog(info string, x ...string) {
 		info = info[0:9]
 	}
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%9s", info),
-		//"Caller": caller,
-		//"Time": timeStamp,
+		"prefix": fmt.Sprintf("%10s", info),
 	}).Error(suffix)
 
 }
@@ -89,7 +85,7 @@ func info(info string, x ...string) {
 		info = info[0:9]
 	}
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%9s", info),
+		"prefix": fmt.Sprintf("%10s", info),
 	}).Info(suffix)
 }
 
@@ -127,8 +123,8 @@ func send(prefix string, name string, key string, x ...string) {
 	logInfo = fmt.Sprintf("%-56s", logInfo) // replce with length at some point
 
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%9s", strings.ToUpper(prefix)),
-		name:     fmt.Sprintf("%-6s", key),
+		"prefix": fmt.Sprintf("%10s", strings.ToUpper(prefix)),
+		name:     fmt.Sprintf("%-10s", key),
 	}).Info(logInfo)
 }
 
