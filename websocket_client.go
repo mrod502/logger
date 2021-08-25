@@ -45,8 +45,6 @@ func NewWebsocketClient(cfg ClientConfig) (cli *WebsocketClient, err error) {
 	cli.logURI = cli.baseURI()
 	cli.logLocally = atomic.NewBool(cfg.LogLocally)
 	cli.brokenConn = atomic.NewBool(false)
-	go cli.connectionHandler()
-	go cli.logWriter()
 	return
 }
 
@@ -106,7 +104,10 @@ func (c *WebsocketClient) Connect() error {
 	c.conn = conn
 	if err != nil {
 		errorLog("DIAL", err.Error())
+		return err
 	}
+	go c.connectionHandler()
+	go c.logWriter()
 	return err
 }
 
