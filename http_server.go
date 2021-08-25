@@ -6,61 +6,17 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
 	gocache "github.com/mrod502/go-cache"
 	"github.com/vmihailenco/msgpack/v5"
-	"go.uber.org/atomic"
 )
-
-type Log struct {
-	f            *os.File
-	c            chan []string
-	ctr          *atomic.Uint32
-	syncInterval *atomic.Uint32
-}
-
-func (l *Log) run() {
-	for {
-		v := <-l.c
-		Info(v...)
-		s := time.Now().Format("2006-01-02 15:04:05.99") + " " + strings.Replace(strings.Join(v, " "), "\n", "\\n", -1) + "\n"
-
-		l.f.WriteString(s)
-		l.ctr.Inc()
-		if l.ctr.Load() > l.syncInterval.Load() {
-			l.f.Sync()
-			l.ctr.Store(0)
-		}
-	}
-}
-
-func NewLog(filePath string, c chan []string) (*Log, error) {
-	l := new(Log)
-	f, err := openLogFile(filePath)
-	l.f = f
-	l.c = c
-	l.ctr = new(atomic.Uint32)
-	l.syncInterval = atomic.NewUint32(20)
-
-	return l, err
-}
-
-func (l *Log) SetSyncInterval(i uint32) {
-	l.syncInterval.Store(i)
-}
-
-func (l *Log) Stop() {
-	l.f.Close()
-	l.f.Sync()
-}
 
 type HttpServer struct {
 	logger  *Log
-	apiKeys *gocache.StringCache
+	apiKeys *gocache.BoolCache
 	notify  chan []string
 }
 
@@ -109,13 +65,15 @@ func (l *HttpServer) doLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = msgpack.Unmarshal(b, &inp)
-
 	if err != nil {
 		Warn("UNMARSHAL", "unable to unmarshal body", err.Error())
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	l.notify <- inp.Log
+	if !l.validKey(inp.Key) {
+		return
+	}
+	l.logger.Write(inp.Log...)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -137,5 +95,5 @@ func closeHandler() {
 
 func (l *HttpServer) validKey(key string) bool {
 
-	return l.apiKeys.Exists(key)
+	return l.apiKeys.Get(key)
 }

@@ -4,18 +4,17 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	gocache "github.com/mrod502/go-cache"
 	"github.com/vmihailenco/msgpack/v5"
-	"go.uber.org/atomic"
 )
 
 type WebsocketServer struct {
-	done                  *atomic.Bool
+	//done                  *atomic.Bool
 	logger                *Log
-	notify                chan []string
 	upgrader              websocket.Upgrader
 	tls                   bool
 	port                  uint16
@@ -29,6 +28,19 @@ type WebsocketServer struct {
 
 func NewWebsocketServer(cfg ServerConfig) (*WebsocketServer, error) {
 	var w = new(WebsocketServer)
+	var err error
+	w.logger, err = NewLog(cfg.LogPath, make(chan []string, 1024))
+	if err != nil {
+		return nil, err
+	}
+	w.upgrader = websocket.Upgrader{
+		HandshakeTimeout:  time.Second,
+		EnableCompression: true,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	w.apiKeys = cfg.KeySignatures
 	return w, nil
 }
 
@@ -43,12 +55,10 @@ func (s *WebsocketServer) Serve() error {
 }
 
 func (s *WebsocketServer) SetSyncInterval(i uint32) {
+	s.logger.SetSyncInterval(i)
 }
 func (s *WebsocketServer) Quit() {
-
-}
-func (s *WebsocketServer) processQueue() {
-
+	s.logger.Stop()
 }
 
 func (s *WebsocketServer) upgrade(w http.ResponseWriter, r *http.Request) {
@@ -57,8 +67,7 @@ func (s *WebsocketServer) upgrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	apiKey := r.Header.Get("API-Key")
-	var keySum = sha256.Sum256([]byte(apiKey))
-	if !s.apiKeys.Get(string(keySum[:])) {
+	if !s.apiKeys.Get(sha256Sum(apiKey)) {
 		s.failedConnAttempts.Add(r.RemoteAddr, 1)
 		http.Error(w, "", http.StatusUnauthorized)
 		return
@@ -72,8 +81,9 @@ func (s *WebsocketServer) upgrade(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *WebsocketServer) doLog(inp ...string) {
-
-	s.notify <- inp
+	if len(inp) > 0 {
+		s.logger.Write(inp...)
+	}
 }
 func (s *WebsocketServer) readMessages(conn *websocket.Conn) {
 	if conn == nil {
@@ -98,4 +108,9 @@ func (s *WebsocketServer) readMessages(conn *websocket.Conn) {
 
 	}
 
+}
+
+func sha256Sum(inp string) string {
+	var keySum = sha256.Sum256([]byte(inp))
+	return string(keySum[:])
 }

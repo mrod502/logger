@@ -1,2 +1,4 @@
 log_path: system.log
 key_signatures: "abcd","efgh"
+cert_file_path: k/sprints.crt
+key_file_path: k/sprints.key

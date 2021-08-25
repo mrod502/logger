@@ -1,16 +1,25 @@
 package logger
 
+import gocache "github.com/mrod502/go-cache"
+
+type BaseConfig struct {
+	Port            uint16 `yaml:"port"`
+	EnableWebsocket bool   `yaml:"enable_websocket"`
+	EnableTLS       bool   `yaml:"enable_tls"`
+}
+
 type ServerConfig struct {
-	LogPath       string   `yaml:"log_path"`
-	KeySignatures []string `yaml:"key_signatures"`
+	BaseConfig
+	LogPath       string             `yaml:"log_path"`
+	KeySignatures *gocache.BoolCache `yaml:"key_signatures"`
+	CertFilePath  string             `yaml:"cert_file_path"`
+	KeyFilePath   string             `yaml:"key_file_path"`
 }
 
 type ClientConfig struct {
-	EnableWebsocket bool
-	EnableTLS       bool
-	APIKey          string
-	Prefix          string
-	RemoteIP        string
-	LogLocally      bool
-	Port            uint16
+	BaseConfig
+	APIKey     string `yaml:"api_key"`
+	Prefix     string `yaml:"prefix"`
+	RemoteIP   string `yaml:"remote_ip"`
+	LogLocally bool   `yaml:"log_locally"`
 }
