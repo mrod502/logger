@@ -7,6 +7,7 @@ type Client interface {
 	Connect() error
 }
 
+//NewClient -
 func NewClient(cfg ClientConfig) (Client, error) {
 	if cfg.EnableWebsocket {
 		return NewWebsocketClient(cfg)
