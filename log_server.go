@@ -7,5 +7,8 @@ type LogServer interface {
 }
 
 func NewLogServer(cfg ServerConfig) (l LogServer, err error) {
-	return
+	if cfg.EnableWebsocket {
+		return NewWebsocketServer(cfg)
+	}
+	return NewHttpServer(cfg)
 }

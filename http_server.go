@@ -56,6 +56,17 @@ func (l *HttpServer) Run(path, port string) {
 
 }
 
+func (l *HttpServer) Quit() {
+	l.logger.Stop()
+}
+func (l *HttpServer) Serve() error {
+	return nil
+}
+func (l *HttpServer) SetSyncInterval(v uint32) {
+	l.logger.SetSyncInterval(v)
+
+}
+
 func (l *HttpServer) doLog(w http.ResponseWriter, r *http.Request) {
 	var inp LogBody
 	b, err := ioutil.ReadAll(r.Body)
