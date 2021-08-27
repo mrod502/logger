@@ -1,14 +1,11 @@
-// Package logger logs all messages through a single, clean interface
 package logger
 
 import (
 	"fmt"
 
-	prefixed "github.com/chappjc/logrus-prefix"
-
 	"github.com/sirupsen/logrus"
+	"go.uber.org/atomic"
 
-	"os"
 	"strings"
 )
 
@@ -16,43 +13,31 @@ var (
 	log = logrus.New()
 )
 
-//longest log
-const (
-	logLength = 52
+var (
+	logLength *atomic.Uint32 = atomic.NewUint32(20) // default to 20
 )
 
-func init() {
+func SetLogLength(v uint32) {
+	logLength.Store(v)
+}
 
-	formatter := new(prefixed.TextFormatter)
-	formatter.FullTimestamp = true
-	formatter.DisableSorting = true
-	formatter.TimestampFormat = "01-02 15:04:05"
-
-	// Set specific colors for prefix and timestamp
-	formatter.SetColorScheme(&prefixed.ColorScheme{
-		PrefixStyle:    "cyan+b",
-		TimestampStyle: "white+h",
-	})
-
-	log.Formatter = formatter
-	log.Level = logrus.DebugLevel
-
-	log.SetOutput(os.Stdout)
+func cropInfo(info string) string {
+	if len(info) > int(logLength.Load()) {
+		return info[0:logLength.Load()]
+	}
+	return info
 }
 
 // Error -- log an error
 func errorLog(info string, x ...string) {
 
 	suffix := strings.Join(x, " ")
-	suffix = fmt.Sprintf("%-56s", suffix) // replce with length at some point
+	suffix = fmt.Sprintf(stringOfLen(logLength.Load()), suffix)
 
 	//_, caller := utils.CallInfo()	// shows who called the Error func
 
-	if len(info) > 9 {
-		info = info[0:9]
-	}
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%10s", info),
+		"prefix": fmt.Sprintf(stringOfLen(logLength.Load()), cropInfo(info)),
 	}).Error(suffix)
 
 }
@@ -61,15 +46,12 @@ func errorLog(info string, x ...string) {
 func warn(info string, x ...string) {
 
 	suffix := strings.Join(x, " ")
-	suffix = fmt.Sprintf("%-55s", suffix) // replce with length at some point
+	suffix = fmt.Sprintf(stringOfLen(logLength.Load()), suffix)
 
 	//_, caller := utils.CallInfo()	// shows who called the Error func
 
-	if len(info) > 9 {
-		info = info[0:9]
-	}
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%25s", info),
+		"prefix": fmt.Sprintf(stringOfLen(logLength.Load()), cropInfo(info)),
 		//"Caller": caller,
 		//"Time": timeStamp,
 	}).Warn(suffix)
@@ -79,13 +61,10 @@ func warn(info string, x ...string) {
 func info(info string, x ...string) {
 
 	suffix := strings.Join(x, " ")
-	suffix = fmt.Sprintf("%-55s", suffix) // replce with length at some point
+	suffix = fmt.Sprintf(stringOfLen(logLength.Load()), suffix)
 
-	if len(info) > 9 {
-		info = info[0:9]
-	}
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%10s", info),
+		"prefix": fmt.Sprintf(stringOfLen(logLength.Load()), cropInfo(info)),
 	}).Info(suffix)
 }
 
@@ -93,13 +72,10 @@ func info(info string, x ...string) {
 func debug(info string, x ...string) {
 
 	suffix := strings.Join(x, " ")
-	suffix = fmt.Sprintf("%-55s", suffix) // replce with length at some point
+	suffix = fmt.Sprintf(stringOfLen(logLength.Load()), suffix)
 
-	if len(info) > 9 {
-		info = info[0:9]
-	}
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%9s", info),
+		"prefix": fmt.Sprintf(stringOfLen(logLength.Load()), cropInfo(info)),
 	}).Debug(suffix)
 }
 
@@ -107,24 +83,21 @@ func debug(info string, x ...string) {
 func send(prefix string, name string, key string, x ...string) {
 	logInfo := strings.Join(x, " ")
 
-	if len(prefix) > 9 {
-		prefix = prefix[0:9]
-	}
 	if len(name) > 6 {
 		name = name[0:6]
 	}
 	if len(key) > 7 {
 		key = key[0:7]
 	}
-	if len(logInfo) > logLength {
-		logInfo = logInfo[0:logLength]
+	if len(logInfo) > int(logLength.Load()) {
+		logInfo = logInfo[0:logLength.Load()]
 	}
 
-	logInfo = fmt.Sprintf("%-56s", logInfo) // replce with length at some point
+	logInfo = fmt.Sprintf(stringOfLen(logLength.Load()), logInfo)
 
 	log.WithFields(logrus.Fields{
-		"prefix": fmt.Sprintf("%10s", strings.ToUpper(prefix)),
-		name:     fmt.Sprintf("%-10s", key),
+		"prefix": fmt.Sprintf(stringOfLen(logLength.Load()), strings.ToUpper(cropInfo(prefix))),
+		name:     fmt.Sprintf(stringOfLen(logLength.Load()), key),
 	}).Info(logInfo)
 }
 
@@ -134,4 +107,36 @@ func line() {
 	log.WithFields(logrus.Fields{
 		"prefix": "---------",
 	}).Info(blankLine)
+}
+
+type logMessage struct {
+	level logLevel
+	msg   []string
+}
+
+// Info -- log information
+func Info(x ...string) {
+	logChan <- logMessage{level: levelInfo, msg: x}
+}
+
+// Error -- log an error
+func Error(x ...string) {
+	logChan <- logMessage{level: levelErr, msg: x}
+}
+
+// Warn -- log an error
+func Warn(x ...string) {
+	logChan <- logMessage{level: levelWarn, msg: x}
+}
+
+//Line - a dashed line
+func Line() {
+	logChan <- logMessage{level: levelLine}
+}
+
+func Debug(x ...string) {
+	if !DebugLogs.Load() {
+		return
+	}
+	logChan <- logMessage{level: levelDebug, msg: x}
 }

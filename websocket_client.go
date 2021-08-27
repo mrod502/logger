@@ -29,25 +29,6 @@ type WebsocketClient struct {
 	brokenConn       *atomic.Bool
 }
 
-func NewWebsocketClient(cfg ClientConfig) (cli *WebsocketClient, err error) {
-	cli = new(WebsocketClient)
-	cli.prefix = cfg.Prefix
-	cli.apiKey = cfg.APIKey
-	cli.logChan = make(chan []string, 512)
-	cli.brokenConnNotify = make(chan bool, 128)
-	if cfg.EnableTLS {
-		cli.protocol = pWSS
-	} else {
-		cli.protocol = pWS
-	}
-	cli.remoteIP = cfg.RemoteIP
-	cli.port = cfg.Port
-	cli.logURI = cli.baseURI()
-	cli.logLocally = atomic.NewBool(cfg.LogLocally)
-	cli.brokenConn = atomic.NewBool(false)
-	return
-}
-
 func (c WebsocketClient) baseURI() string {
 	return fmt.Sprintf("%s://%s:%d", c.protocol, c.remoteIP, c.port)
 }
@@ -85,7 +66,7 @@ func (c *WebsocketClient) notifyBrokenConn() {
 	c.brokenConnNotify <- true
 }
 
-func (c *WebsocketClient) WriteLog(l ...string) error {
+func (c *WebsocketClient) Write(l ...string) error {
 	if cap(c.logChan) == len(c.logChan) {
 		return ErrCacheFull
 	}
@@ -100,7 +81,8 @@ func (c *WebsocketClient) Connect() error {
 		WriteBufferSize:  1024,
 		HandshakeTimeout: 30 * time.Second,
 	}
-	conn, _, err := dialer.Dial(c.logURI, h)
+	conn, _, err := dialer.Dial(c.logURI+"/ws", h)
+
 	c.conn = conn
 	if err != nil {
 		errorLog("DIAL", err.Error())

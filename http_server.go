@@ -5,9 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/gorilla/mux"
 	gocache "github.com/mrod502/go-cache"
@@ -15,60 +12,56 @@ import (
 )
 
 type HttpServer struct {
-	logger  *Log
-	apiKeys *gocache.BoolCache
-	notify  chan []string
-}
-
-func NewHttpServer(cfg ServerConfig) (*HttpServer, error) {
-
-	c := make(chan []string, 1024)
-
-	l, err := NewLog("", c)
-	if err != nil {
-		return nil, err
-	}
-	ls := &HttpServer{
-		logger: l,
-		notify: c,
-	}
-	return ls, nil
-}
-
-func (l *HttpServer) Run(path, port string) {
-	Info("LOGGER", "Starting up")
-
-	router := mux.NewRouter()
-
-	router.HandleFunc(EndpointLog, l.doLog).Methods("POST")
-	var err error
-	l.logger, err = NewLog(path, l.notify)
-
-	if err != nil {
-		Error("LOG", err.Error(), "exiting")
-		return
-	}
-	defer l.logger.Stop()
-	go l.logger.run()
-
-	go http.ListenAndServe(fmt.Sprintf(":%s", port), router)
-	closeHandler()
-
+	logger      *FileLog
+	apiKeys     *gocache.BoolCache
+	notify      chan []string
+	enableTLS   bool
+	router      *mux.Router
+	certFilePah string
+	keyFilePath string
+	port        uint16
+	path        string
 }
 
 func (l *HttpServer) Quit() {
 	l.logger.Stop()
 }
+
 func (l *HttpServer) Serve() error {
-	return nil
+	Info("LOGGER", "Starting up")
+
+	l.router = mux.NewRouter()
+
+	l.router.HandleFunc(EndpointLog, l.doLog).Methods("POST")
+
+	var err error
+
+	l.logger, err = NewFileLog(l.path, l.notify)
+	if err != nil {
+		Error("LOG", err.Error(), "exiting")
+		return fmt.Errorf("unable to open log file: %s", err.Error())
+	}
+
+	go l.logger.Start()
+
+	if l.enableTLS {
+		return http.ListenAndServeTLS(fmt.Sprintf(":%d", l.port), l.certFilePah, l.keyFilePath, l.router)
+	}
+	return http.ListenAndServe(fmt.Sprintf(":%d", l.port), l.router)
 }
+
 func (l *HttpServer) SetSyncInterval(v uint32) {
 	l.logger.SetSyncInterval(v)
 
 }
 
 func (l *HttpServer) doLog(w http.ResponseWriter, r *http.Request) {
-	var inp LogBody
+	if !l.authorized(r) {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		Warn("LOG", "unauthorized request", r.RemoteAddr)
+		return
+	}
+	var inp []string
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		Warn("READ", "unable to read body", err.Error())
@@ -81,10 +74,7 @@ func (l *HttpServer) doLog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	if !l.validKey(inp.Key) {
-		return
-	}
-	l.logger.Write(inp.Log...)
+	l.logger.Write(inp...)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -96,15 +86,6 @@ func openLogFile(path string) (f *os.File, err error) {
 	return
 }
 
-func closeHandler() {
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	<-c
-	Info("LOGGER", "exiting")
-	time.Sleep(time.Second / 2)
-}
-
-func (l *HttpServer) validKey(key string) bool {
-
-	return l.apiKeys.Get(key)
+func (l *HttpServer) authorized(req *http.Request) bool {
+	return l.apiKeys.Get(sha256Sum(req.Header.Get("API-Key")))
 }

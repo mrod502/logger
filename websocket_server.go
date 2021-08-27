@@ -1,10 +1,8 @@
 package logger
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -14,44 +12,25 @@ import (
 
 type WebsocketServer struct {
 	//done                  *atomic.Bool
-	logger                *Log
-	upgrader              websocket.Upgrader
-	tls                   bool
-	port                  uint16
-	conns                 *gocache.InterfaceCache
-	cert                  string
-	key                   string
 	apiKeys               *gocache.BoolCache
-	maxFailedConnAttempts int
+	cert                  string
+	conns                 *gocache.InterfaceCache
 	failedConnAttempts    *gocache.IntCache
-}
-
-func NewWebsocketServer(cfg ServerConfig) (*WebsocketServer, error) {
-	var w = new(WebsocketServer)
-	var err error
-	w.logger, err = NewLog(cfg.LogPath, make(chan []string, 1024))
-	if err != nil {
-		return nil, err
-	}
-	w.upgrader = websocket.Upgrader{
-		HandshakeTimeout:  time.Second,
-		EnableCompression: true,
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
-	w.apiKeys = cfg.KeySignatures
-	return w, nil
+	key                   string
+	logger                *FileLog
+	maxFailedConnAttempts uint32
+	port                  uint16
+	router                *mux.Router
+	tls                   bool
+	upgrader              *websocket.Upgrader
 }
 
 func (s *WebsocketServer) Serve() error {
-	router := mux.NewRouter()
-	router.HandleFunc("/ws", s.upgrade)
-
+	go s.logger.Start()
 	if s.tls {
-		return http.ListenAndServeTLS(fmt.Sprintf(":%d", s.port), s.cert, s.key, router)
+		return http.ListenAndServeTLS(fmt.Sprintf(":%d", s.port), s.cert, s.key, s.router)
 	}
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), router)
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), s.router)
 }
 
 func (s *WebsocketServer) SetSyncInterval(i uint32) {
@@ -62,8 +41,9 @@ func (s *WebsocketServer) Quit() {
 }
 
 func (s *WebsocketServer) upgrade(w http.ResponseWriter, r *http.Request) {
-	if s.failedConnAttempts.Get(r.RemoteAddr) >= s.maxFailedConnAttempts {
-		//s.doLog("BLACKLIST", "upgrade attempt", r.RemoteAddr)
+
+	if uint32(s.failedConnAttempts.Get(r.RemoteAddr)) >= s.maxFailedConnAttempts {
+		s.doLog("BLACKLIST", "upgrade attempt", r.RemoteAddr)
 		return
 	}
 	apiKey := r.Header.Get("API-Key")
@@ -90,6 +70,7 @@ func (s *WebsocketServer) readMessages(conn *websocket.Conn) {
 		s.doLog("READ", "Nil conn")
 		return
 	}
+	defer conn.Close()
 
 	for {
 		_, b, err := conn.ReadMessage()
@@ -103,14 +84,17 @@ func (s *WebsocketServer) readMessages(conn *websocket.Conn) {
 		if err != nil {
 			s.doLog("READ", conn.RemoteAddr().String(), err.Error())
 		} else {
+
 			s.doLog(append([]string{"LOG", conn.RemoteAddr().String()}, msg...)...)
 		}
-
 	}
-
 }
 
-func sha256Sum(inp string) string {
-	var keySum = sha256.Sum256([]byte(inp))
-	return string(keySum[:])
+func (s *WebsocketServer) buildRouter() {
+	s.router = mux.NewRouter()
+	s.router.HandleFunc("/ws", s.upgrade)
+	s.router.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		Info("PING", "PONG")
+		w.Write([]byte("pong"))
+	})
 }
