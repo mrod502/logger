@@ -50,7 +50,7 @@ func stringOfLen(inp uint32) string {
 
 func sha256Sum(inp string) string {
 	var keySum = sha256.Sum256([]byte(inp))
-	return string(keySum[:])
+	return fmt.Sprintf("%x", keySum[:])
 }
 
 func closeHandler() {

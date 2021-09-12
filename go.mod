@@ -11,7 +11,6 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mrod502/go-cache v0.0.0-20210814173135-1b2873173d19
 	github.com/onsi/gomega v1.15.0 // indirect
-	github.com/rs/zerolog v1.23.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/vmihailenco/msgpack/v5 v5.3.4
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
