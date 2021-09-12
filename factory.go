@@ -17,7 +17,6 @@ func NewClient(cfg ClientConfig) (Client, error) {
 		return NewWebsocketClient(cfg)
 	}
 	return NewHttpClient(cfg)
-
 }
 
 func NewLogServer(cfg ServerConfig) (l LogServer, err error) {
@@ -52,9 +51,7 @@ func NewHttpClient(cfg ClientConfig) (c *HttpClient, err error) {
 	} else {
 		c.protocol = pHTTP
 	}
-
 	c.logURI = c.baseURI() + EndpointLog
-
 	res, err := http.DefaultClient.Post(c.logURI, "application/octet-stream", r)
 	if err != nil {
 		return nil, errors.New("unable to connect to client: " + err.Error())
@@ -66,9 +63,7 @@ func NewHttpClient(cfg ClientConfig) (c *HttpClient, err error) {
 }
 
 func NewHttpServer(cfg ServerConfig) (*HttpServer, error) {
-
 	c := make(chan []string, 1024)
-
 	l, err := NewFileLog("", c)
 	if err != nil {
 		return nil, err
@@ -113,7 +108,6 @@ func NewWebsocketServer(cfg ServerConfig) (*WebsocketServer, error) {
 		return nil, err
 	}
 	w.maxFailedConnAttempts = 20
-
 	w.port = cfg.Port
 	w.buildRouter()
 	w.tls = cfg.EnableTLS

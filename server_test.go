@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -39,9 +40,8 @@ func TestWebsocketServer(t *testing.T) {
 	if _, ok := server.(*WebsocketServer); !ok {
 		t.Fatalf("expected *WebsocketServer, got %T", server)
 	}
-
 	go server.Serve()
-
+	defer os.Remove("log-test.log")
 	defer server.Quit()
 	time.Sleep(time.Second)
 	var cli Client

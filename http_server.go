@@ -29,19 +29,14 @@ func (l *HttpServer) Quit() {
 
 func (l *HttpServer) Serve() error {
 	Info("LOGGER", "Starting up")
-
 	l.router = mux.NewRouter()
-
 	l.router.HandleFunc(EndpointLog, l.doLog).Methods("POST")
-
 	var err error
-
 	l.logger, err = NewFileLog(l.path, l.notify)
 	if err != nil {
 		Error("LOG", err.Error(), "exiting")
 		return fmt.Errorf("unable to open log file: %s", err.Error())
 	}
-
 	go l.logger.Start()
 
 	if l.enableTLS {

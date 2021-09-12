@@ -9,7 +9,6 @@ import (
 )
 
 func init() {
-
 	formatter := new(prefixed.TextFormatter)
 	formatter.FullTimestamp = true
 	formatter.DisableSorting = true
@@ -22,10 +21,8 @@ func init() {
 	})
 	formatter.ForceColors = true
 	formatter.ForceFormatting = true
-
 	log.Formatter = formatter
 	log.Level = logrus.DebugLevel
-
 	log.SetOutput(os.Stdout)
 	logChan = make(chan logMessage, 1024)
 	DebugLogs = atomic.NewBool(false)

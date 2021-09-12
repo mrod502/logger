@@ -40,9 +40,7 @@ func (c *HttpClient) Write(inp ...string) (err error) {
 	if c.LogLocally() {
 		Info(inp...)
 	}
-
 	var req *http.Request
-
 	req, err = http.NewRequest(http.MethodPost, c.logURI, c.buildRequestBody(inp))
 	if err != nil {
 		return
@@ -50,7 +48,6 @@ func (c *HttpClient) Write(inp ...string) (err error) {
 	var res *http.Response
 	req.Header.Set("content-type", "application/octet-stream")
 	req.Header.Set("API-Key", c.apiKey)
-
 	res, err = http.DefaultClient.Do(req)
 	if res.StatusCode > 299 {
 		Error("WRITE", fmt.Sprintf("send request: %d", res.StatusCode))
