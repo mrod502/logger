@@ -83,7 +83,7 @@ func (s *WebsocketServer) readMessages(conn *websocket.Conn) {
 		var msg []string
 		err = msgpack.Unmarshal(b, &msg)
 		if err != nil {
-			s.doLog("READ", conn.RemoteAddr().String(), err.Error(), " - disconnecting...")
+			s.doLog("READ", conn.RemoteAddr().String(), err.Error(), "- disconnecting...")
 			conn.Close()
 			return
 		} else {
