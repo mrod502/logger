@@ -56,6 +56,7 @@ func (s *WebsocketServer) upgrade(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.doLog("UPGRADE", r.RemoteAddr, err.Error())
 	}
+	s.doLog("CLIENT", "new client connected:", r.RemoteAddr)
 	s.conns.Set(conn.RemoteAddr().String(), conn)
 	go s.readMessages(conn)
 }
@@ -82,7 +83,9 @@ func (s *WebsocketServer) readMessages(conn *websocket.Conn) {
 		var msg []string
 		err = msgpack.Unmarshal(b, &msg)
 		if err != nil {
-			s.doLog("READ", conn.RemoteAddr().String(), err.Error())
+			s.doLog("READ", conn.RemoteAddr().String(), err.Error(), " - disconnecting...")
+			conn.Close()
+			return
 		} else {
 
 			s.doLog(append([]string{"LOG", conn.RemoteAddr().String()}, msg...)...)
