@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,6 +15,14 @@ import (
 
 var (
 	ErrCacheFull = errors.New("log cache is full")
+)
+
+var (
+	defaultTlsCfg *tls.Config = &tls.Config{
+		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+			return nil
+		},
+	}
 )
 
 type WebsocketClient struct {
@@ -76,10 +86,12 @@ func (c *WebsocketClient) Write(l ...string) error {
 func (c *WebsocketClient) Connect() error {
 	h := make(http.Header)
 	h.Set("API-Key", c.apiKey)
+
 	dialer := &websocket.Dialer{
 		ReadBufferSize:   1024,
 		WriteBufferSize:  1024,
 		HandshakeTimeout: 30 * time.Second,
+		TLSClientConfig:  defaultTlsCfg,
 	}
 	conn, _, err := dialer.Dial(c.logURI+"/ws", h)
 
