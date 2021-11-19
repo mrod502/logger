@@ -95,11 +95,12 @@ func (c *WebsocketClient) Connect() error {
 	}
 	conn, _, err := dialer.Dial(c.logURI+"/ws", h)
 
-	c.conn = conn
 	if err != nil {
 		errorLog("DIAL", err.Error())
 		return err
 	}
+	c.conn = conn
+
 	go c.connectionHandler()
 	go c.logWriter()
 	return err
