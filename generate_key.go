@@ -1,12 +1,12 @@
 package logger
 
 import (
-	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
-	"fmt"
+	"math/big"
 )
 
 func GenerateKey(bits int) (*rsa.PrivateKey, error) {
@@ -14,12 +14,9 @@ func GenerateKey(bits int) (*rsa.PrivateKey, error) {
 }
 
 func MarshalKeyPair(k *rsa.PrivateKey) (priv, pub []byte, err error) {
-	priv = make([]byte, 0, 1<<9)
-	pub = make([]byte, 0, 1<<9)
+
 	privBytes := x509.MarshalPKCS1PrivateKey(k)
 	pubBytes, err := x509.MarshalPKIXPublicKey(&k.PublicKey)
-	fmt.Println(string(privBytes))
-	fmt.Println(string(pubBytes))
 
 	if err != nil {
 		return nil, nil, err
@@ -33,15 +30,44 @@ func MarshalKeyPair(k *rsa.PrivateKey) (priv, pub []byte, err error) {
 		Type:  "PUBLIC KEY",
 		Bytes: pubBytes,
 	}
-	buf := bytes.NewBuffer(priv)
+	buf := newBuffer()
 	err = pem.Encode(buf, privBlock)
 	if err != nil {
 		return
 	}
 
-	buf1 := bytes.NewBuffer(pub)
+	buf1 := newBuffer()
 
 	err = pem.Encode(buf1, pubBlock)
 
-	return
+	return buf.b, buf1.b, err
+}
+
+func GenerateApiKey() (string, string) {
+	var b = make([]byte, 0, 64)
+	for i := 0; i < 64; i++ {
+
+		v, _ := rand.Int(rand.Reader, big.NewInt(255))
+		b = append(b, byte(v.Int64()))
+	}
+
+	key := base64.StdEncoding.EncodeToString(b)
+
+	sig := sha256Sum(key)
+
+	return key, sig
+}
+
+type buffer struct {
+	b []byte
+}
+
+func (b *buffer) Write(bt []byte) (int, error) {
+
+	b.b = append(b.b, bt...)
+	return len(bt), nil
+}
+
+func newBuffer() *buffer {
+	return &buffer{b: make([]byte, 0, 128)}
 }
