@@ -2,7 +2,6 @@ package logger
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,9 +18,7 @@ var (
 
 var (
 	defaultTlsCfg *tls.Config = &tls.Config{
-		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-			return nil
-		},
+		InsecureSkipVerify: true,
 	}
 )
 

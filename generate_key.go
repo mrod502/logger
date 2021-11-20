@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 )
 
 func GenerateKey(bits int) (*rsa.PrivateKey, error) {
@@ -17,6 +18,9 @@ func MarshalKeyPair(k *rsa.PrivateKey) (priv, pub []byte, err error) {
 	pub = make([]byte, 0, 1<<9)
 	privBytes := x509.MarshalPKCS1PrivateKey(k)
 	pubBytes, err := x509.MarshalPKIXPublicKey(&k.PublicKey)
+	fmt.Println(string(privBytes))
+	fmt.Println(string(pubBytes))
+
 	if err != nil {
 		return nil, nil, err
 	}

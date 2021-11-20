@@ -6,3 +6,8 @@
 *.log
 *.txt
 *.out
+*.pem
+*.crt
+*.key
+!test.key
+!test.crt

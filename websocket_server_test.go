@@ -8,7 +8,7 @@ import (
 
 func TestWebsocketServerTls(t *testing.T) {
 	var baseConfig = BaseConfig{
-		Port:            3838,
+		Port:            2121,
 		EnableWebsocket: true,
 		EnableTLS:       true,
 	}
@@ -22,8 +22,8 @@ func TestWebsocketServerTls(t *testing.T) {
 		BaseConfig:    baseConfig,
 		KeySignatures: gocache.NewBoolCache(sigs),
 		LogPath:       "log-test.log",
-		CertFilePath:  "certificate.pem",
-		KeyFilePath:   "key.pem",
+		CertFilePath:  "test.crt",
+		KeyFilePath:   "test.key",
 	}
 
 	server, err := NewWebsocketServer(cfg)
