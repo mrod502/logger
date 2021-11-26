@@ -2,6 +2,8 @@ package logger
 
 import gocache "github.com/mrod502/go-cache"
 
+const version = "1.1.20"
+
 type BaseConfig struct {
 	Port            uint16 `yaml:"port"`
 	EnableWebsocket bool   `yaml:"enable_websocket"`
@@ -22,4 +24,8 @@ type ClientConfig struct {
 	Prefix     string `yaml:"prefix"`
 	RemoteIP   string `yaml:"remote_ip"`
 	LogLocally bool   `yaml:"log_locally"`
+}
+
+func Version() string {
+	return version
 }
