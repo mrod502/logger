@@ -20,7 +20,7 @@ func TestWebsocketServerTls(t *testing.T) {
 
 	var cfg = ServerConfig{
 		BaseConfig:    baseConfig,
-		KeySignatures: gocache.NewBoolCache(sigs),
+		KeySignatures: gocache.New(sigs),
 		LogPath:       "log-test.log",
 		CertFilePath:  "test.crt",
 		KeyFilePath:   "test.key",

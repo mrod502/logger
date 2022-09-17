@@ -27,7 +27,7 @@ func TestWebsocketServer(t *testing.T) {
 	sigs[invalidKeySignature] = false
 	var cfg = ServerConfig{
 		BaseConfig:    baseConfig,
-		KeySignatures: gocache.NewBoolCache(sigs),
+		KeySignatures: gocache.New(sigs),
 		LogPath:       "log-test.log",
 	}
 	var server LogServer

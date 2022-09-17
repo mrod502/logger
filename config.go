@@ -12,10 +12,10 @@ type BaseConfig struct {
 
 type ServerConfig struct {
 	BaseConfig
-	LogPath       string             `yaml:"log_path"`
-	KeySignatures *gocache.BoolCache `yaml:"key_signatures"`
-	CertFilePath  string             `yaml:"cert_file_path"`
-	KeyFilePath   string             `yaml:"key_file_path"`
+	LogPath       string                       `yaml:"log_path"`
+	KeySignatures *gocache.Cache[bool, string] `yaml:"key_signatures"`
+	CertFilePath  string                       `yaml:"cert_file_path"`
+	KeyFilePath   string                       `yaml:"key_file_path"`
 }
 
 type ClientConfig struct {

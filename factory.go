@@ -11,7 +11,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-//NewClient -
+// NewClient -
 func NewClient(cfg ClientConfig) (Client, error) {
 	if cfg.EnableWebsocket {
 		return NewWebsocketClient(cfg)
@@ -100,8 +100,8 @@ func NewWebsocketServer(cfg ServerConfig) (*WebsocketServer, error) {
 
 	w.apiKeys = cfg.KeySignatures
 	w.cert = cfg.CertFilePath
-	w.conns = gocache.NewInterfaceCache()
-	w.failedConnAttempts = gocache.NewIntCache()
+	w.conns = gocache.New[interface{}, string]()
+	w.failedConnAttempts = gocache.New[uint32, string]()
 	w.key = cfg.KeyFilePath
 	w.logger, err = NewFileLog(cfg.LogPath, make(chan []string, 1024))
 	if err != nil {
