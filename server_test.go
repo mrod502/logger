@@ -20,8 +20,8 @@ func TestWebsocketServer(t *testing.T) {
 	var sigs = make(map[string]bool)
 	var validKey = "some-valid-key"
 	var invalidKey = "some-invalid-key"
-	var validKeySignature = sha256Sum(validKey)
-	var invalidKeySignature = sha256Sum(invalidKey)
+	var validKeySignature = Sha256Sum(validKey)
+	var invalidKeySignature = Sha256Sum(invalidKey)
 
 	sigs[validKeySignature] = true
 	sigs[invalidKeySignature] = false

@@ -12,10 +12,10 @@ import (
 
 type WebsocketServer struct {
 	//done                  *atomic.Bool
-	apiKeys               *gocache.Cache[bool, string]
+	apiKeys               *gocache.Cache[string, bool]
 	cert                  string
-	conns                 *gocache.Cache[interface{}, string]
-	failedConnAttempts    *gocache.Cache[uint32, string]
+	conns                 *gocache.Cache[string, interface{}]
+	failedConnAttempts    *gocache.Cache[string, uint32]
 	key                   string
 	logger                *FileLog
 	maxFailedConnAttempts uint32
@@ -47,7 +47,7 @@ func (s *WebsocketServer) upgrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	apiKey := r.Header.Get("API-Key")
-	if v, _ := s.apiKeys.Get(sha256Sum(apiKey)); !v {
+	if v, _ := s.apiKeys.Get(Sha256Sum(apiKey)); !v {
 		s.failedConnAttempts.Set(r.RemoteAddr, 1)
 		http.Error(w, "", http.StatusUnauthorized)
 		return

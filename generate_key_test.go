@@ -44,7 +44,7 @@ func TestGenerateApiKey(t *testing.T) {
 
 	fmt.Println("key:", key)
 	fmt.Println("sig:", sig)
-	if sha256Sum(key) != sig {
+	if Sha256Sum(key) != sig {
 		t.Fatal("key signature did not match")
 	}
 }

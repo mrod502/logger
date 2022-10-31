@@ -48,7 +48,7 @@ func stringOfLen(inp uint32) string {
 	return fmt.Sprintf("%%%ds", inp)
 }
 
-func sha256Sum(inp string) string {
+func Sha256Sum(inp string) string {
 	var keySum = sha256.Sum256([]byte(inp))
 	return fmt.Sprintf("%x", keySum[:])
 }

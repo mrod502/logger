@@ -13,10 +13,10 @@ func TestSum(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(string(b))
-	fmt.Println(sha256Sum(string(b)), sha256Sum("abcde"))
+	fmt.Println(Sha256Sum(string(b)), Sha256Sum("abcde"))
 
 }
 
 func TestNewKey(t *testing.T) {
-	fmt.Println(sha256Sum("abcde"))
+	fmt.Println(Sha256Sum("abcde"))
 }

@@ -13,7 +13,7 @@ import (
 
 type HttpServer struct {
 	logger      *FileLog
-	apiKeys     *gocache.Cache[bool, string]
+	apiKeys     *gocache.Cache[string, bool]
 	notify      chan []string
 	enableTLS   bool
 	router      *mux.Router
@@ -82,6 +82,6 @@ func openLogFile(path string) (f *os.File, err error) {
 }
 
 func (l *HttpServer) authorized(req *http.Request) bool {
-	v, _ := l.apiKeys.Get(sha256Sum(req.Header.Get("API-Key")))
+	v, _ := l.apiKeys.Get(Sha256Sum(req.Header.Get("API-Key")))
 	return v
 }

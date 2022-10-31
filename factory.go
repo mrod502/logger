@@ -100,8 +100,8 @@ func NewWebsocketServer(cfg ServerConfig) (*WebsocketServer, error) {
 
 	w.apiKeys = cfg.KeySignatures
 	w.cert = cfg.CertFilePath
-	w.conns = gocache.New[interface{}, string]()
-	w.failedConnAttempts = gocache.New[uint32, string]()
+	w.conns = gocache.New[string, interface{}]()
+	w.failedConnAttempts = gocache.New[string, uint32]()
 	w.key = cfg.KeyFilePath
 	w.logger, err = NewFileLog(cfg.LogPath, make(chan []string, 1024))
 	if err != nil {

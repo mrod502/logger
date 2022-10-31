@@ -53,7 +53,7 @@ func GenerateApiKey() (string, string) {
 
 	key := base64.StdEncoding.EncodeToString(b)
 
-	sig := sha256Sum(key)
+	sig := Sha256Sum(key)
 
 	return key, sig
 }
